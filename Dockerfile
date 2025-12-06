@@ -58,5 +58,9 @@ USER nextjs
 # Expose port
 EXPOSE 3002
 
+# Set hostname to listen on all interfaces
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3002
+
 # Start the application
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]
