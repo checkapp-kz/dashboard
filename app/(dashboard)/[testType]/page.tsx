@@ -9,7 +9,7 @@ import { useAnalyses, useCreateAnalysis, useUpdateAnalysis, useDeleteAnalysis } 
 import { useSpecialists, useCreateSpecialist, useUpdateSpecialist, useDeleteSpecialist } from '@/hooks/use-specialists';
 import { useDiagnostics, useCreateDiagnostic, useUpdateDiagnostic, useDeleteDiagnostic } from '@/hooks/use-diagnostics';
 import { useRecommendations, useCreateRecommendation, useUpdateRecommendation, useDeleteRecommendation } from '@/hooks/use-recommendations';
-import type { AnalysisTemplate, SpecialistTemplate, DiagnosticTemplate, RecommendationTemplate, TestType } from '@/lib/types';
+import type { TestType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,7 +42,6 @@ const analysisSchema = z.object({
   invitroCode: z.string().optional(),
   invitroPrice: z.number().optional(),
   specialPrice: z.number().optional(),
-  price: z.number().optional(),
   isActive: z.boolean(),
   orderIndex: z.number().optional(),
 });
@@ -95,27 +94,27 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
 
   // Dialog states
   const [dialogType, setDialogType] = useState<'analysis' | 'specialist' | 'diagnostic' | 'recommendation' | null>(null);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<unknown>(null);
   const [deleteItem, setDeleteItem] = useState<{ type: string; id: string } | null>(null);
 
   // Forms
-  const analysisForm = useForm({ resolver: zodResolver(analysisSchema), defaultValues: { name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, price: undefined, isActive: true, orderIndex: undefined } });
+  const analysisForm = useForm({ resolver: zodResolver(analysisSchema), defaultValues: { name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined } });
   const specialistForm = useForm({ resolver: zodResolver(specialistSchema), defaultValues: { name: '', codes: [], isActive: true, orderIndex: undefined } });
   const diagnosticForm = useForm({ resolver: zodResolver(diagnosticSchema), defaultValues: { name: '', description: '', codes: [], isActive: true, orderIndex: undefined } });
   const recommendationForm = useForm({ resolver: zodResolver(recommendationSchema), defaultValues: { name: '', content: '', isActive: true, orderIndex: undefined } });
 
   const openCreate = (type: typeof dialogType) => {
     setEditingItem(null);
-    if (type === 'analysis') analysisForm.reset({ name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, price: undefined, isActive: true, orderIndex: undefined });
+    if (type === 'analysis') analysisForm.reset({ name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined });
     if (type === 'specialist') specialistForm.reset({ name: '', codes: [], isActive: true, orderIndex: undefined });
     if (type === 'diagnostic') diagnosticForm.reset({ name: '', description: '', codes: [], isActive: true, orderIndex: undefined });
     if (type === 'recommendation') recommendationForm.reset({ name: '', content: '', isActive: true, orderIndex: undefined });
     setDialogType(type);
   };
 
-  const openEdit = (type: typeof dialogType, item: any) => {
+  const openEdit = (type: typeof dialogType, item: unknown) => {
     setEditingItem(item);
-    if (type === 'analysis') analysisForm.reset({ name: item.name, description: item.description || '', codes: item.codes, invitroCode: item.invitroCode || '', invitroPrice: item.invitroPrice, specialPrice: item.specialPrice, price: item.price, isActive: item.isActive, orderIndex: item.orderIndex });
+    if (type === 'analysis') analysisForm.reset({ name: item.name, description: item.description || '', codes: item.codes, invitroCode: item.invitroCode || '', invitroPrice: item.invitroPrice, specialPrice: item.specialPrice, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'specialist') specialistForm.reset({ name: item.name, codes: item.codes, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'diagnostic') diagnosticForm.reset({ name: item.name, description: item.description || '', codes: item.codes, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'recommendation') recommendationForm.reset({ name: item.name, content: item.content, isActive: item.isActive, orderIndex: item.orderIndex });
@@ -207,10 +206,12 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>#</TableHead>
                     <TableHead>Название</TableHead>
                     <TableHead>Коды</TableHead>
                     <TableHead>Код Invitro</TableHead>
-                    <TableHead>Цена</TableHead>
+                    <TableHead>Цена Invitro</TableHead>
+                    <TableHead>Спец. цена</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead className="text-right">Действия</TableHead>
                   </TableRow>
@@ -222,10 +223,12 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
                     <TableRow><TableCell colSpan={6} className="text-center py-8 text-gray-500">Нет данных</TableCell></TableRow>
                   ) : analyses?.map((item) => (
                     <TableRow key={item._id}>
+                      <TableCell>{item.orderIndex || '-'}</TableCell>
                       <TableCell className="font-medium max-w-[200px] truncate">{item.name}</TableCell>
                       <TableCell><div className="flex flex-wrap gap-1">{item.codes.slice(0, 3).map((code) => (<Badge key={code} variant="secondary" className="text-xs">{code}</Badge>))}{item.codes.length > 3 && <Badge variant="secondary" className="text-xs">+{item.codes.length - 3}</Badge>}</div></TableCell>
                       <TableCell>{item.invitroCode || '-'}</TableCell>
                       <TableCell>{item.invitroPrice ? `${item.invitroPrice} ₸` : '-'}</TableCell>
+                      <TableCell>{item.specialPrice ? `${item.specialPrice} ₸` : '-'}</TableCell>
                       <TableCell><Badge className={item.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}>{item.isActive ? 'Активен' : 'Неактивен'}</Badge></TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => openEdit('analysis', item)} className="h-8 w-8"><Pencil className="h-4 w-4" /></Button>
@@ -376,7 +379,6 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
               <div><Label>Код Invitro</Label><Input {...analysisForm.register('invitroCode')} /></div>
               <div><Label>Цена Invitro</Label><Input type="number" {...analysisForm.register('invitroPrice', { valueAsNumber: true })} /></div>
               <div><Label>Спец. цена</Label><Input type="number" {...analysisForm.register('specialPrice', { valueAsNumber: true })} /></div>
-              <div><Label>Цена</Label><Input type="number" {...analysisForm.register('price', { valueAsNumber: true })} /></div>
               <div><Label>Порядок</Label><Input type="number" {...analysisForm.register('orderIndex', { valueAsNumber: true })} /></div>
               <div className="col-span-2"><Label>Коды</Label><CodeInput value={analysisForm.watch('codes')} onChange={(codes) => analysisForm.setValue('codes', codes)} /></div>
               <div className="col-span-2 flex items-center gap-2"><Checkbox id="isActive" checked={analysisForm.watch('isActive')} onCheckedChange={(c) => analysisForm.setValue('isActive', !!c)} /><Label htmlFor="isActive">Активен</Label></div>

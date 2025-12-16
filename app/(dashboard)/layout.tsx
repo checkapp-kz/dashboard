@@ -22,6 +22,8 @@ import {
   LogOut,
   Menu,
   X,
+  FileText,
+  ChartArea,
 } from 'lucide-react';
 
 const navigation = [
@@ -32,6 +34,14 @@ const navigation = [
   { name: 'Планирование (муж)', href: '/male-pregnancy', icon: Baby },
   { name: 'После родов', href: '/post-pregnant', icon: Heart },
   { name: 'Интим тест', href: '/intim', icon: Heart },
+];
+
+const managementNavigation = [
+  { name: 'Шаблоны чекапов', href: '/checkup-templates', icon: FileText },
+];
+
+const statisticsNavigation = [
+  { name: 'Статистика', href: '/statistics', icon: ChartArea },
 ];
 
 export default function DashboardLayout({
@@ -88,7 +98,7 @@ export default function DashboardLayout({
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 bg-linear-to-br from-teal-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-md">
                 <span className="text-white text-sm font-bold">CA</span>
               </div>
               <span className="text-lg font-semibold text-gray-900">CheckApp</span>
@@ -117,7 +127,7 @@ export default function DashboardLayout({
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-100'
+                      ? 'bg-linear-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-100'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   )}
                 >
@@ -126,6 +136,56 @@ export default function DashboardLayout({
                 </Link>
               );
             })}
+
+            <div className="pt-4 mt-4 border-t border-gray-200">
+              <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Управление
+              </p>
+              {managementNavigation.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-linear-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-100'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    )}
+                  >
+                    <item.icon className={cn('h-5 w-5', isActive ? 'text-teal-600' : 'text-gray-400')} />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div className='pt-4 mt-4 border-t border-gray-200'>
+              <p className='px-3 text-xs font-semiboold text-gray-400 uppercase tracking-wider mb-2'>
+                Статистика
+              </p>
+              {statisticsNavigation.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-linear-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-100'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    )}
+                  >
+                    <item.icon className={cn('h-5 w-5', isActive ? 'text-teal-600' : 'text-gray-400')} />
+                    {item.name}
+                  </Link>
+                )
+              })}
+            </div>
           </nav>
 
           <div className="p-3 border-t border-gray-200">
@@ -135,7 +195,7 @@ export default function DashboardLayout({
                   variant="ghost"
                   className="w-full justify-start gap-3 h-auto py-2.5 px-3 hover:bg-gray-100"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-linear-to-br from-teal-500 to-cyan-600 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1 text-left">
