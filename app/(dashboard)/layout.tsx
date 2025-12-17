@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { useTestTypes } from '@/hooks/use-test-types';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,27 +15,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Users,
   User,
-  Dumbbell,
-  Baby,
-  Heart,
   LogOut,
   Menu,
   X,
   FileText,
   ChartArea,
+  Loader2,
 } from 'lucide-react';
-
-const navigation = [
-  { name: 'Женский чекап', href: '/female', icon: Users },
-  { name: 'Мужской чекап', href: '/male', icon: User },
-  { name: 'Спорт чекап', href: '/sport', icon: Dumbbell },
-  { name: 'Планирование (жен)', href: '/female-pregnancy', icon: Baby },
-  { name: 'Планирование (муж)', href: '/male-pregnancy', icon: Baby },
-  { name: 'После родов', href: '/post-pregnant', icon: Heart },
-  { name: 'Интим тест', href: '/intim', icon: Heart },
-];
 
 const managementNavigation = [
   { name: 'Шаблоны чекапов', href: '/checkup-templates', icon: FileText },
@@ -55,15 +43,22 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
 
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
+  const { testTypes, isLoading: loadingTestTypes } = useTestTypes();
+
+  const navigation = useMemo(() => {
+    return testTypes.map((type) => ({
+      name: type.label,
+      href: `/${type.value}`,
+    }));
+  }, [testTypes]);
 
   useEffect(() => {
-    if (hasHydrated && !isAuthenticated) {
+    setHasHydrated(true);
+    if (!isAuthenticated) {
       router.push('/login');
     }
-  }, [hasHydrated, isAuthenticated, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -78,7 +73,11 @@ export default function DashboardLayout({
     );
   }
 
-  const currentNav = navigation.find((item) => pathname.startsWith(item.href));
+  const currentNav = navigation.find((item) => {
+    const exactMatch = pathname === item.href;
+    const prefixMatch = pathname.startsWith(item.href + '/');
+    return exactMatch || prefixMatch;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,13 +116,22 @@ export default function DashboardLayout({
             <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
               Типы тестов
             </p>
-            {navigation.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+            {loadingTestTypes ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+              </div>
+            ) : navigation.map((item) => {
+              const exactMatch = pathname === item.href;
+              const prefixMatch = pathname.startsWith(item.href + '/');
+              const isActive = exactMatch || prefixMatch;
+
               return (
                 <Link
-                  key={item.name}
+                  key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={() => {
+                    setSidebarOpen(false);
+                  }}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                     isActive
@@ -131,7 +139,6 @@ export default function DashboardLayout({
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   )}
                 >
-                  <item.icon className={cn('h-5 w-5', isActive ? 'text-teal-600' : 'text-gray-400')} />
                   {item.name}
                 </Link>
               );
@@ -142,7 +149,10 @@ export default function DashboardLayout({
                 Управление
               </p>
               {managementNavigation.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const exactMatch = pathname === item.href;
+                const prefixMatch = pathname.startsWith(item.href + '/');
+                const isActive = exactMatch || prefixMatch;
+
                 return (
                   <Link
                     key={item.name}
@@ -167,7 +177,10 @@ export default function DashboardLayout({
                 Статистика
               </p>
               {statisticsNavigation.map((item) => {
-                const isActive = pathname.startsWith(item.href);
+                const exactMatch = pathname === item.href;
+                const prefixMatch = pathname.startsWith(item.href + '/');
+                const isActive = exactMatch || prefixMatch;
+
                 return (
                   <Link
                     key={item.name}

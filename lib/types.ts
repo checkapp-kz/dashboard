@@ -51,24 +51,22 @@ export interface RecommendationTemplate {
   updatedAt: string;
 }
 
-export type TestType =
-  | "female"
-  | "male"
-  | "sport"
-  | "female-pregnancy"
-  | "male-pregnancy"
-  | "post-pregnant"
-  | "intim";
+// TestType теперь динамический - любой testKey из CheckupTemplate
+export type TestType = string;
 
-export const TEST_TYPES: { value: TestType; label: string }[] = [
-  { value: "female", label: "Female Checkup" },
-  { value: "male", label: "Male Checkup" },
-  { value: "sport", label: "Sport Checkup" },
-  { value: "female-pregnancy", label: "Female Pregnancy Prep" },
-  { value: "male-pregnancy", label: "Male Pregnancy Prep" },
-  { value: "post-pregnant", label: "Post-Pregnancy" },
-  { value: "intim", label: "Intimate Test" },
+// Legacy defaults - используются как fallback при отсутствии данных из API
+export const DEFAULT_TEST_TYPES: { value: string; label: string }[] = [
+  { value: "female", label: "Женский чекап" },
+  { value: "male", label: "Мужской чекап" },
+  { value: "sport", label: "Спорт чекап" },
+  { value: "female-pregnancy", label: "Планирование (жен)" },
+  { value: "male-pregnancy", label: "Планирование (муж)" },
+  { value: "post-pregnant", label: "После родов" },
+  { value: "intim", label: "Интим тест" },
 ];
+
+// Для обратной совместимости
+export const TEST_TYPES = DEFAULT_TEST_TYPES;
 
 // Checkup Template Types
 export type QuestionType =

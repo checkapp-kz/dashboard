@@ -9,6 +9,7 @@ import { useAnalyses, useCreateAnalysis, useUpdateAnalysis, useDeleteAnalysis } 
 import { useSpecialists, useCreateSpecialist, useUpdateSpecialist, useDeleteSpecialist } from '@/hooks/use-specialists';
 import { useDiagnostics, useCreateDiagnostic, useUpdateDiagnostic, useDeleteDiagnostic } from '@/hooks/use-diagnostics';
 import { useRecommendations, useCreateRecommendation, useUpdateRecommendation, useDeleteRecommendation } from '@/hooks/use-recommendations';
+import { useTestTypes, getTestTypeLabel } from '@/hooks/use-test-types';
 import type { TestType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,24 +22,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CodeInput } from '@/components/code-input';
+import { UnionCodesInput } from '@/components/union-codes-input';
 import { DeleteDialog } from '@/components/delete-dialog';
 import { Plus, Pencil, Trash2, Loader2, FlaskConical, Stethoscope, Activity, FileText } from 'lucide-react';
-
-const TEST_TYPE_NAMES: Record<string, string> = {
-  'female': 'Женский чекап',
-  'male': 'Мужской чекап',
-  'sport': 'Спорт чекап',
-  'female-pregnancy': 'Планирование беременности (жен)',
-  'male-pregnancy': 'Планирование беременности (муж)',
-  'post-pregnant': 'После родов',
-  'intim': 'Интим тест',
-};
 
 // Form schemas
 const analysisSchema = z.object({
   name: z.string().min(1, 'Название обязательно'),
   description: z.string().optional(),
   codes: z.array(z.string()),
+  codesUnionCombinations: z.array(z.array(z.string())),
   invitroCode: z.string().optional(),
   invitroPrice: z.number().optional(),
   specialPrice: z.number().optional(),
@@ -68,9 +61,15 @@ const recommendationSchema = z.object({
   orderIndex: z.number().optional(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EditableItem = any;
+
 export default function TestTypePage({ params }: { params: Promise<{ testType: string }> }) {
   const { testType } = use(params);
   const testTypeValue = testType as TestType;
+
+  // Динамические типы тестов
+  const { testTypes } = useTestTypes();
 
   // Data queries
   const { data: analyses, isLoading: loadingAnalyses } = useAnalyses(testTypeValue);
@@ -94,27 +93,27 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
 
   // Dialog states
   const [dialogType, setDialogType] = useState<'analysis' | 'specialist' | 'diagnostic' | 'recommendation' | null>(null);
-  const [editingItem, setEditingItem] = useState<unknown>(null);
+  const [editingItem, setEditingItem] = useState<EditableItem>(null);
   const [deleteItem, setDeleteItem] = useState<{ type: string; id: string } | null>(null);
 
   // Forms
-  const analysisForm = useForm({ resolver: zodResolver(analysisSchema), defaultValues: { name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined } });
+  const analysisForm = useForm({ resolver: zodResolver(analysisSchema), defaultValues: { name: '', description: '', codes: [], codesUnionCombinations: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined } });
   const specialistForm = useForm({ resolver: zodResolver(specialistSchema), defaultValues: { name: '', codes: [], isActive: true, orderIndex: undefined } });
   const diagnosticForm = useForm({ resolver: zodResolver(diagnosticSchema), defaultValues: { name: '', description: '', codes: [], isActive: true, orderIndex: undefined } });
   const recommendationForm = useForm({ resolver: zodResolver(recommendationSchema), defaultValues: { name: '', content: '', isActive: true, orderIndex: undefined } });
 
   const openCreate = (type: typeof dialogType) => {
     setEditingItem(null);
-    if (type === 'analysis') analysisForm.reset({ name: '', description: '', codes: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined });
+    if (type === 'analysis') analysisForm.reset({ name: '', description: '', codes: [], codesUnionCombinations: [], invitroCode: '', invitroPrice: undefined, specialPrice: undefined, isActive: true, orderIndex: undefined });
     if (type === 'specialist') specialistForm.reset({ name: '', codes: [], isActive: true, orderIndex: undefined });
     if (type === 'diagnostic') diagnosticForm.reset({ name: '', description: '', codes: [], isActive: true, orderIndex: undefined });
     if (type === 'recommendation') recommendationForm.reset({ name: '', content: '', isActive: true, orderIndex: undefined });
     setDialogType(type);
   };
 
-  const openEdit = (type: typeof dialogType, item: unknown) => {
+  const openEdit = (type: typeof dialogType, item: EditableItem) => {
     setEditingItem(item);
-    if (type === 'analysis') analysisForm.reset({ name: item.name, description: item.description || '', codes: item.codes, invitroCode: item.invitroCode || '', invitroPrice: item.invitroPrice, specialPrice: item.specialPrice, isActive: item.isActive, orderIndex: item.orderIndex });
+    if (type === 'analysis') analysisForm.reset({ name: item.name, description: item.description || '', codes: item.codes, codesUnionCombinations: item.codesUnionCombinations || [], invitroCode: item.invitroCode || '', invitroPrice: item.invitroPrice, specialPrice: item.specialPrice, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'specialist') specialistForm.reset({ name: item.name, codes: item.codes, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'diagnostic') diagnosticForm.reset({ name: item.name, description: item.description || '', codes: item.codes, isActive: item.isActive, orderIndex: item.orderIndex });
     if (type === 'recommendation') recommendationForm.reset({ name: item.name, content: item.content, isActive: item.isActive, orderIndex: item.orderIndex });
@@ -165,7 +164,7 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">{TEST_TYPE_NAMES[testType] || testType}</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{getTestTypeLabel(testTypes, testType)}</h2>
         <p className="text-sm text-gray-500 mt-1">Управление данными для этого типа теста</p>
       </div>
 
@@ -209,6 +208,7 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
                     <TableHead>#</TableHead>
                     <TableHead>Название</TableHead>
                     <TableHead>Коды</TableHead>
+                    <TableHead>Комбинации</TableHead>
                     <TableHead>Код Invitro</TableHead>
                     <TableHead>Цена Invitro</TableHead>
                     <TableHead>Спец. цена</TableHead>
@@ -218,14 +218,15 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
                 </TableHeader>
                 <TableBody>
                   {loadingAnalyses ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto text-teal-600" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin mx-auto text-teal-600" /></TableCell></TableRow>
                   ) : analyses?.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center py-8 text-gray-500">Нет данных</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center py-8 text-gray-500">Нет данных</TableCell></TableRow>
                   ) : analyses?.map((item) => (
                     <TableRow key={item._id}>
                       <TableCell>{item.orderIndex || '-'}</TableCell>
                       <TableCell className="font-medium max-w-[200px] truncate">{item.name}</TableCell>
                       <TableCell><div className="flex flex-wrap gap-1">{item.codes.slice(0, 3).map((code) => (<Badge key={code} variant="secondary" className="text-xs">{code}</Badge>))}{item.codes.length > 3 && <Badge variant="secondary" className="text-xs">+{item.codes.length - 3}</Badge>}</div></TableCell>
+                      <TableCell><div className="flex flex-col gap-1">{item.codesUnionCombinations && item.codesUnionCombinations.length > 0 ? item.codesUnionCombinations.map((combo, idx) => (<div key={idx} className="flex flex-wrap gap-1">{combo.map((code) => (<Badge key={code} variant="outline" className="text-xs bg-blue-50 text-blue-700">{code}</Badge>))}</div>)) : <span className="text-gray-400 text-xs">-</span>}</div></TableCell>
                       <TableCell>{item.invitroCode || '-'}</TableCell>
                       <TableCell>{item.invitroPrice ? `${item.invitroPrice} ₸` : '-'}</TableCell>
                       <TableCell>{item.specialPrice ? `${item.specialPrice} ₸` : '-'}</TableCell>
@@ -381,6 +382,7 @@ export default function TestTypePage({ params }: { params: Promise<{ testType: s
               <div><Label>Спец. цена</Label><Input type="number" {...analysisForm.register('specialPrice', { valueAsNumber: true })} /></div>
               <div><Label>Порядок</Label><Input type="number" {...analysisForm.register('orderIndex', { valueAsNumber: true })} /></div>
               <div className="col-span-2"><Label>Коды</Label><CodeInput value={analysisForm.watch('codes')} onChange={(codes) => analysisForm.setValue('codes', codes)} /></div>
+              <div className="col-span-2"><Label>Комбинации кодов (AND)</Label><UnionCodesInput value={analysisForm.watch('codesUnionCombinations')} onChange={(combinations) => analysisForm.setValue('codesUnionCombinations', combinations)} /></div>
               <div className="col-span-2 flex items-center gap-2"><Checkbox id="isActive" checked={analysisForm.watch('isActive')} onCheckedChange={(c) => analysisForm.setValue('isActive', !!c)} /><Label htmlFor="isActive">Активен</Label></div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t">
