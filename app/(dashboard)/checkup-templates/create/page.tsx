@@ -23,6 +23,8 @@ const checkupTemplateSchema = z.object({
     .min(1, 'Ключ теста обязателен')
     .regex(/^[a-zA-Z0-9_-]+$/, 'Только латиница, цифры, дефисы и подчеркивания'),
   title: z.string().min(1, 'Название обязательно'),
+  carouselTitle: z.string().min(1, 'Заголовок карусели обязателен'),
+  carouselSubtitle: z.string().min(1, 'Подзаголовок карусели обязателен'),
   description: z.string().min(1, 'Описание обязательно'),
   image: z.string().optional(),
   benefits: z.array(z.string()).optional(),
@@ -52,6 +54,8 @@ export default function CreateCheckupTemplatePage() {
     defaultValues: {
       testKey: '',
       title: '',
+      carouselTitle: '',
+      carouselSubtitle: '',
       description: '',
       benefits: [''],
       doctors: [],
