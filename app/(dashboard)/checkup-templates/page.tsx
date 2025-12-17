@@ -259,7 +259,7 @@ export default function CheckupTemplatesPage() {
         onConfirm={handleDelete}
         title={`Удалить "${deleteItem?.title}"?`}
         description="Это действие нельзя отменить. Шаблон чекапа будет удален навсегда."
-        loading={deleteTemplate.isPending}
+        isLoading={deleteTemplate.isPending}
       />
     </div>
   );
