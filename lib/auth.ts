@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import axios from "axios";
 import type { User, AuthState } from "./types";
+import { useEffect, useState } from "react";
 
 const API_BASE_URL = "https://checkapp.kz/api";
 
@@ -15,7 +16,7 @@ interface AuthStore extends AuthState {
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set, get, store) => ({
       user: null,
       accessToken: null,
       _refreshToken: null,
@@ -87,6 +88,7 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "checkapp-admin-auth",
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
@@ -96,3 +98,20 @@ export const useAuthStore = create<AuthStore>()(
     }
   )
 );
+
+// Hook to check if zustand store has been hydrated from localStorage
+export const useAuthHydrated = () => {
+  const [hydrated, setHydrated] = useState(() => useAuthStore.persist.hasHydrated());
+
+  useEffect(() => {
+    const unsubFinishHydration = useAuthStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+
+    return () => {
+      unsubFinishHydration();
+    };
+  }, []);
+
+  return hydrated;
+};
