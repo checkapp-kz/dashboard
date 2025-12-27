@@ -22,10 +22,12 @@ import {
   FileText,
   ChartArea,
   Loader2,
+  Users,
 } from 'lucide-react';
 
 const managementNavigation = [
   { name: 'Шаблоны чекапов', href: '/checkup-templates', icon: FileText },
+  { name: 'Пользователи', href: '/users', icon: Users },
 ];
 
 const statisticsNavigation = [

@@ -180,3 +180,74 @@ export interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
 }
+
+// Admin Dashboard Types
+export interface UserPurchase {
+  testId: string;
+  testType: string;
+  testTypeLabel: string;
+  status: "PAID" | "NOT-PAID";
+  createdAt: string;
+  invitroPaid: boolean;
+  homeVisit: boolean;
+}
+
+export interface UserListItem {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  checkappId: string;
+  isVerified: boolean;
+  birthDate?: string;
+  incomingSource?: string;
+  totalTests: number;
+  paidTests: number;
+  purchases: UserPurchase[];
+}
+
+export interface UserListResponse {
+  users: UserListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface TestTypeStat {
+  testType: string;
+  testTypeLabel: string;
+  total: number;
+  paid: number;
+  unpaid: number;
+  completed: number;
+  incomplete: number;
+}
+
+export interface InvitroStat {
+  totalPaid: number;
+  totalUnpaid: number;
+  homeVisitsRequested: number;
+  homeVisitsPaid: number;
+}
+
+export interface OrderStat {
+  total: number;
+  completed: number;
+  pending: number;
+  failed: number;
+}
+
+export interface StatisticsResponse {
+  testStats: TestTypeStat[];
+  totalTests: {
+    total: number;
+    paid: number;
+    unpaid: number;
+    completed: number;
+    incomplete: number;
+  };
+  invitroStats: InvitroStat;
+  orderStats: OrderStat;
+  totalUsers: number;
+}
