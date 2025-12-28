@@ -238,6 +238,14 @@ export interface OrderStat {
   failed: number;
 }
 
+export interface TrafficSourceStat {
+  source: string;
+  medium: string;
+  totalVisitors: number;
+  uniqueVisitors: number;
+  percentage: number;
+}
+
 export interface StatisticsResponse {
   testStats: TestTypeStat[];
   totalTests: {
@@ -250,6 +258,8 @@ export interface StatisticsResponse {
   invitroStats: InvitroStat;
   orderStats: OrderStat;
   totalUsers: number;
+  trafficSourceStats: TrafficSourceStat[];
+  totalTraffic: number;
 }
 
 // Doctor Verification Types

@@ -16,6 +16,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { Loader2, Users, ClipboardList, CreditCard, Home, CheckCircle, Clock, XCircle } from 'lucide-react';
+import TrafficSourceStats from '@/components/traffic-source-stats';
 
 function MetricCard({
   title,
@@ -275,7 +276,7 @@ export default function StatisticsPage() {
         </div>
 
         {/* Invitro Stats Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <ChartCard title="Статистика Invitro">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-green-50 rounded-lg text-center">
@@ -331,6 +332,14 @@ export default function StatisticsPage() {
             </div>
           </ChartCard>
         </div>
+
+        {/* Traffic Source Statistics */}
+        {stats.trafficSourceStats && stats.trafficSourceStats.length > 0 && (
+          <TrafficSourceStats
+            stats={stats.trafficSourceStats}
+            totalTraffic={stats.totalTraffic}
+          />
+        )}
       </div>
     </div>
   );
