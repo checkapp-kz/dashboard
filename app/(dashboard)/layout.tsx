@@ -23,11 +23,13 @@ import {
   ChartArea,
   Loader2,
   Users,
+  UserCheck,
 } from 'lucide-react';
 
 const managementNavigation = [
   { name: 'Шаблоны чекапов', href: '/checkup-templates', icon: FileText },
   { name: 'Пользователи', href: '/users', icon: Users },
+  { name: 'Верификация врачей', href: '/doctor-verification', icon: UserCheck },
 ];
 
 const statisticsNavigation = [

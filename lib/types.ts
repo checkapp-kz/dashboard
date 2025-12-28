@@ -251,3 +251,40 @@ export interface StatisticsResponse {
   orderStats: OrderStat;
   totalUsers: number;
 }
+
+// Doctor Verification Types
+export type DoctorVerificationStatus = "pending" | "approved";
+
+export interface DoctorApplication {
+  id: string;
+  name: string;
+  email: string;
+  specialization: string;
+  experience: number;
+  workplace: string;
+  isVerified: boolean;
+  isDoctorVerified: boolean;
+  avatarUrl?: string;
+  createdAt: string;
+  verificationStatus: DoctorVerificationStatus;
+}
+
+export interface DoctorApplicationsResponse {
+  applications: DoctorApplication[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface DoctorApplicationsStats {
+  pending: number;
+  approved: number;
+  total: number;
+}
+
+export interface DoctorApplicationsQueryParams {
+  status?: DoctorVerificationStatus;
+  page?: number;
+  limit?: number;
+}
