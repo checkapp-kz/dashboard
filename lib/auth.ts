@@ -4,7 +4,7 @@ import axios from "axios";
 import type { User, AuthState } from "./types";
 import { useEffect, useState } from "react";
 
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = "https://checkapp.kz/api";
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<boolean>;
