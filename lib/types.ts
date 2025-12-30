@@ -187,6 +187,7 @@ export interface UserPurchase {
   testType: string;
   testTypeLabel: string;
   status: "PAID" | "NOT-PAID";
+  price: number;
   createdAt: string;
   invitroPaid: boolean;
   homeVisit: boolean;

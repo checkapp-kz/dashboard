@@ -207,7 +207,11 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
                       <Badge variant="outline">{purchase.testTypeLabel}</Badge>
                     </TableCell>
                     <TableCell>
-                      {purchase.status === 'PAID' ? (
+                      {purchase.price === 0 || purchase.price == null ? (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          Бесплатно
+                        </Badge>
+                      ) : purchase.status === 'PAID' ? (
                         <Badge className="bg-green-100 text-green-800">
                           Оплачено
                         </Badge>
