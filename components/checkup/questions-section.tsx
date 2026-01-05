@@ -22,6 +22,7 @@ import {
   Trash2,
   GripVertical,
   HelpCircle,
+  ImageIcon,
 } from 'lucide-react';
 import type {
   CreateCheckupTemplateDto,
@@ -32,6 +33,7 @@ import type {
 } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { AnimatePresence, motion } from 'framer-motion';
+import { QuestionImageUpload } from './question-image-upload';
 
 interface QuestionsSectionProps {
   form: UseFormReturn<CreateCheckupTemplateDto>;
@@ -235,10 +237,13 @@ export function QuestionsSection({ form }: QuestionsSectionProps) {
                       </Button>
                     </div>
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
-                    <CardTitle className="text-base">
-                      Вопрос {qIndex + 1}
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <span>Вопрос {qIndex + 1}</span>
+                      {question.image && (
+                        <ImageIcon className="h-4 w-4 text-teal-600" />
+                      )}
                       {question.question && (
-                        <span className="ml-2 font-normal text-muted-foreground">
+                        <span className="font-normal text-muted-foreground">
                           — {question.question.slice(0, 50)}
                           {question.question.length > 50 && '...'}
                         </span>
@@ -356,6 +361,12 @@ export function QuestionsSection({ form }: QuestionsSectionProps) {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Question image upload */}
+                      <QuestionImageUpload
+                        value={question.image}
+                        onChange={(url) => updateQuestion(qIndex, 'image', url)}
+                      />
 
                       {/* Variants for single/multi/multiple types */}
                       {(question.type === 'single' ||

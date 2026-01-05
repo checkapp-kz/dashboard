@@ -69,13 +69,17 @@ export default function CreateCheckupTemplatePage() {
     const values = form.getValues();
     values.isActive = publish;
 
+    // Clean up NaN price values
+    if (typeof values.price === 'number' && Number.isNaN(values.price)) {
+      values.price = undefined;
+    }
+
     // Validation
     const result = checkupTemplateSchema.safeParse(values);
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
-      Object.entries(errors).forEach(([messages]) => {
-        toast.warning('Ошибка валидации: ' + (messages?.[0] || 'Неизвестная ошибка'));
-      });
+      console.error(errors);
+      toast.warning(`Ошибка валидации: ${errors.questions ?? 'Проверьте введенные данные'}`);
       return;
     }
 

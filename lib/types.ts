@@ -124,6 +124,7 @@ export interface CheckupQuestion {
   disclaimer?: QuestionDisclaimer;
   hasOtherAnswer?: boolean;
   hasNoSelectedAnswer?: boolean;
+  image?: string;
 }
 
 export interface Doctor {

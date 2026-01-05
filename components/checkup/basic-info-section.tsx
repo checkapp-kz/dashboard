@@ -177,7 +177,12 @@ export function BasicInfoSection({ form }: BasicInfoSectionProps) {
           <Checkbox
             id="free"
             checked={isFree}
-            onCheckedChange={(checked) => setValue('free', !!checked)}
+            onCheckedChange={(checked) => {
+              setValue('free', !!checked);
+              if (checked) {
+                setValue('price', undefined);
+              }
+            }}
           />
           <Label htmlFor="free" className="cursor-pointer">
             Бесплатный тест

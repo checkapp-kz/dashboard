@@ -2,7 +2,7 @@ import { UseFormReturn } from 'react-hook-form';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, User } from 'lucide-react';
+import { CheckCircle2, User, ImageIcon } from 'lucide-react';
 import type { CreateCheckupTemplateDto } from '@/lib/types';
 
 interface PreviewSectionProps {
@@ -126,7 +126,18 @@ export function PreviewSection({ form }: PreviewSectionProps) {
                     <p className="font-medium mb-2">
                       {index + 1}. {question.question || 'Текст вопроса'}
                     </p>
-                    <div className="flex items-center gap-2">
+                    {question.image && (
+                      <div className="relative w-full max-w-[200px] h-24 mb-2 rounded overflow-hidden bg-muted">
+                        <Image
+                          src={question.image}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
                         {question.type === 'single' && 'Один вариант'}
                         {question.type === 'multi' && 'Несколько вариантов'}
@@ -143,6 +154,12 @@ export function PreviewSection({ form }: PreviewSectionProps) {
                       {question.fields && (
                         <Badge variant="outline" className="text-xs">
                           {question.fields.length} полей
+                        </Badge>
+                      )}
+                      {question.image && (
+                        <Badge variant="outline" className="text-xs">
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          Изображение
                         </Badge>
                       )}
                     </div>

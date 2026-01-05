@@ -100,14 +100,16 @@ export default function EditCheckupTemplatePage({
   const handleSave = async () => {
     const values = form.getValues();
 
+    // Clean up NaN price values
+    if (typeof values.price === 'number' && Number.isNaN(values.price)) {
+      values.price = undefined;
+    }
+
     // Validation
     const result = checkupTemplateSchema.safeParse(values);
     if (!result.success) {
       const errors = result.error.flatten().fieldErrors;
-      console.error(errors);
-      Object.entries(errors).forEach(([messages]) => {
-        toast.warning('Ошибка валидации: ' + (messages?.[0] || 'Неизвестная ошибка'));
-      });
+      toast.warning(`Ошибка валидации: ${errors.questions ?? 'Проверьте введенные данные'}`);
       return;
     }
 
