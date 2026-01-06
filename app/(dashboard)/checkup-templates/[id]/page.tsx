@@ -1,7 +1,7 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +21,8 @@ import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { ERRORS } from '@/constants/errors';
 import axios from 'axios';
+import { onAuthError } from '@/lib/auth';
+import { saveFormBackup, getFormBackup, clearFormBackup } from '@/lib/api';
 
 const checkupTemplateSchema = z.object({
   testKey: z
@@ -56,10 +58,16 @@ export default function EditCheckupTemplatePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const pathname = usePathname();
   const [isSaving, setIsSaving] = useState(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRestoredRef = useRef(false);
+  const templateLoadedRef = useRef(false);
 
   const { data: template, isLoading } = useCheckupTemplate(id);
   const updateCheckupTemplate = useUpdateCheckupTemplate();
+
+  const AUTOSAVE_KEY = `checkapp-checkup-template-edit-${id}`;
 
   const form = useForm<CreateCheckupTemplateDto>({
     resolver: zodResolver(checkupTemplateSchema),
@@ -77,25 +85,133 @@ export default function EditCheckupTemplatePage({
     },
   });
 
-  useEffect(() => {
-    if (template) {
-      form.reset({
-        testKey: template.testKey,
-        title: template.title,
-        carouselTitle: template.carouselTitle,
-        carouselSubtitle: template.carouselSubtitle,
-        description: template.description,
-        image: template.image,
-        benefits: template.benefits,
-        doctors: template.doctors,
-        free: template.free,
-        price: template.price,
-        pdfTemplate: template.pdfTemplate,
-        isActive: template.isActive,
-        questions: template.questions,
-      });
+  // Save form data to localStorage
+  const saveToLocalStorage = useCallback(() => {
+    if (!templateLoadedRef.current) return;
+    const values = form.getValues();
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+        data: values,
+        timestamp: Date.now(),
+      }));
+    } catch (e) {
+      console.error('[Autosave] Failed to save:', e);
     }
-  }, [template, form]);
+  }, [form, AUTOSAVE_KEY]);
+
+  // Clear autosave data
+  const clearAutosave = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  }, [AUTOSAVE_KEY]);
+
+  // Check for auth redirect backup
+  useEffect(() => {
+    if (hasRestoredRef.current) return;
+
+    const backup = getFormBackup();
+    if (backup && backup.path === pathname) {
+      hasRestoredRef.current = true;
+      templateLoadedRef.current = true;
+      form.reset(backup.data as CreateCheckupTemplateDto);
+      clearFormBackup();
+      toast.success('Данные формы восстановлены после перезахода');
+    }
+  }, [pathname, form]);
+
+  // Load template or restore from autosave
+  useEffect(() => {
+    if (!template || hasRestoredRef.current) return;
+
+    // Check for autosave
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (saved) {
+        const { data, timestamp } = JSON.parse(saved);
+        // Only restore if saved within last 24 hours
+        if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+          hasRestoredRef.current = true;
+          templateLoadedRef.current = true;
+          form.reset(data);
+          toast.info('Восстановлены несохраненные изменения', {
+            action: {
+              label: 'Сбросить',
+              onClick: () => {
+                clearAutosave();
+                form.reset({
+                  testKey: template.testKey,
+                  title: template.title,
+                  carouselTitle: template.carouselTitle,
+                  carouselSubtitle: template.carouselSubtitle,
+                  description: template.description,
+                  image: template.image,
+                  benefits: template.benefits,
+                  doctors: template.doctors,
+                  free: template.free,
+                  price: template.price,
+                  pdfTemplate: template.pdfTemplate,
+                  isActive: template.isActive,
+                  questions: template.questions,
+                });
+              },
+            },
+          });
+          return;
+        } else {
+          localStorage.removeItem(AUTOSAVE_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('[Autosave] Failed to check:', e);
+    }
+
+    // No autosave, load from template
+    templateLoadedRef.current = true;
+    form.reset({
+      testKey: template.testKey,
+      title: template.title,
+      carouselTitle: template.carouselTitle,
+      carouselSubtitle: template.carouselSubtitle,
+      description: template.description,
+      image: template.image,
+      benefits: template.benefits,
+      doctors: template.doctors,
+      free: template.free,
+      price: template.price,
+      pdfTemplate: template.pdfTemplate,
+      isActive: template.isActive,
+      questions: template.questions,
+    });
+  }, [template, form, AUTOSAVE_KEY, clearAutosave]);
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    autosaveTimerRef.current = setInterval(saveToLocalStorage, 30 * 1000);
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearInterval(autosaveTimerRef.current);
+      }
+    };
+  }, [saveToLocalStorage]);
+
+  // Save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveToLocalStorage();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveToLocalStorage]);
+
+  // Listen for auth errors and save form data
+  useEffect(() => {
+    const unsubscribe = onAuthError(() => {
+      const values = form.getValues();
+      saveFormBackup(values, pathname);
+    });
+    return unsubscribe;
+  }, [form, pathname]);
 
   const handleSave = async () => {
     const values = form.getValues();
@@ -116,6 +232,8 @@ export default function EditCheckupTemplatePage({
     setIsSaving(true);
     try {
       await updateCheckupTemplate.mutateAsync({ id, ...values });
+      // Clear autosave on successful save
+      clearAutosave();
       toast.success('Шаблон чекапа успешно обновлен');
       router.push('/checkup-templates');
     } catch (error) {

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useAuthStore, useAuthHydrated } from '@/lib/auth';
+import { useAuthStore, useAuthHydrated, useProactiveTokenRefresh } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { useTestTypes } from '@/hooks/use-test-types';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,9 @@ export default function DashboardLayout({
   const hasHydrated = useAuthHydrated();
 
   const { testTypes, isLoading: loadingTestTypes } = useTestTypes();
+
+  // Proactively refresh token before it expires
+  useProactiveTokenRefresh();
 
   const navigation = useMemo(() => {
     return testTypes.map((type) => ({

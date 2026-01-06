@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,6 +16,10 @@ import { QuestionsSection } from '@/components/checkup/questions-section';
 import { PreviewSection } from '@/components/checkup/preview-section';
 import { ArrowLeft, Loader2, Save, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import { onAuthError } from '@/lib/auth';
+import { saveFormBackup, getFormBackup, clearFormBackup } from '@/lib/api';
+
+const AUTOSAVE_KEY = 'checkapp-checkup-template-autosave';
 
 const checkupTemplateSchema = z.object({
   testKey: z
@@ -46,8 +50,11 @@ const checkupTemplateSchema = z.object({
 
 export default function CreateCheckupTemplatePage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isSaving, setIsSaving] = useState(false);
   const createCheckupTemplate = useCreateCheckupTemplate();
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasRestoredRef = useRef(false);
 
   const form = useForm<CreateCheckupTemplateDto>({
     resolver: zodResolver(checkupTemplateSchema),
@@ -64,6 +71,119 @@ export default function CreateCheckupTemplatePage() {
       questions: [],
     },
   });
+
+  // Save form data to localStorage
+  const saveToLocalStorage = useCallback(() => {
+    const values = form.getValues();
+    // Only save if there's actual data
+    if (values.title || values.questions.length > 0 || values.testKey) {
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+          data: values,
+          timestamp: Date.now(),
+        }));
+      } catch (e) {
+        console.error('[Autosave] Failed to save:', e);
+      }
+    }
+  }, [form]);
+
+  // Restore form data from localStorage
+  const restoreFromLocalStorage = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(AUTOSAVE_KEY);
+      if (!saved) return false;
+
+      const { data, timestamp } = JSON.parse(saved);
+      // Only restore if saved within last 24 hours
+      if (Date.now() - timestamp > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        return false;
+      }
+
+      if (data && (data.title || data.questions?.length > 0 || data.testKey)) {
+        form.reset(data);
+        return true;
+      }
+    } catch (e) {
+      console.error('[Autosave] Failed to restore:', e);
+    }
+    return false;
+  }, [form]);
+
+  // Clear autosave data
+  const clearAutosave = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  }, []);
+
+  // Restore from auth redirect backup
+  useEffect(() => {
+    if (hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
+    // First check for auth redirect backup
+    const backup = getFormBackup();
+    if (backup && backup.path === pathname) {
+      form.reset(backup.data as CreateCheckupTemplateDto);
+      clearFormBackup();
+      toast.success('Данные формы восстановлены после перезахода');
+      return;
+    }
+
+    // Then check for regular autosave
+    if (restoreFromLocalStorage()) {
+      toast.info('Восстановлены несохраненные данные', {
+        action: {
+          label: 'Очистить',
+          onClick: () => {
+            clearAutosave();
+            form.reset({
+              testKey: '',
+              title: '',
+              carouselTitle: '',
+              carouselSubtitle: '',
+              description: '',
+              benefits: [''],
+              doctors: [],
+              free: false,
+              isActive: true,
+              questions: [],
+            });
+          },
+        },
+      });
+    }
+  }, [pathname, form, restoreFromLocalStorage, clearAutosave]);
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    autosaveTimerRef.current = setInterval(saveToLocalStorage, 30 * 1000);
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearInterval(autosaveTimerRef.current);
+      }
+    };
+  }, [saveToLocalStorage]);
+
+  // Save before page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveToLocalStorage();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveToLocalStorage]);
+
+  // Listen for auth errors and save form data
+  useEffect(() => {
+    const unsubscribe = onAuthError(() => {
+      const values = form.getValues();
+      saveFormBackup(values, pathname);
+    });
+    return unsubscribe;
+  }, [form, pathname]);
 
   const handleSave = async (publish: boolean) => {
     const values = form.getValues();
@@ -86,6 +206,8 @@ export default function CreateCheckupTemplatePage() {
     setIsSaving(true);
     try {
       await createCheckupTemplate.mutateAsync(values);
+      // Clear autosave on successful save
+      clearAutosave();
       toast.success(`Шаблон чекапа ${publish ? 'опубликован' : 'сохранен как черновик'}`);
       router.push('/checkup-templates');
     } catch {
